@@ -1,0 +1,135 @@
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: ingestion-raw
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: rag-kafka
+spec:
+  topicName: ingestion.raw
+  partitions: 3
+  replicas: 2
+  config:
+    retention.ms: "604800000"   # 7 days
+    retention.bytes: "-1"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: ingestion-parsed
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: rag-kafka
+spec:
+  topicName: ingestion.parsed
+  partitions: 3
+  replicas: 2
+  config:
+    retention.ms: "604800000"
+    retention.bytes: "-1"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: ingestion-scanned
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: rag-kafka
+spec:
+  topicName: ingestion.scanned
+  partitions: 3
+  replicas: 2
+  config:
+    retention.ms: "604800000"
+    retention.bytes: "-1"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: ingestion-quarantine
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: rag-kafka
+spec:
+  topicName: ingestion.quarantine
+  partitions: 3
+  replicas: 2
+  config:
+    retention.ms: "2592000000"  # 30 days — human review window
+    retention.bytes: "-1"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: ingestion-chunked
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: rag-kafka
+spec:
+  topicName: ingestion.chunked
+  partitions: 3
+  replicas: 2
+  config:
+    retention.ms: "604800000"
+    retention.bytes: "-1"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: ingestion-enriched
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: rag-kafka
+spec:
+  topicName: ingestion.enriched
+  partitions: 3
+  replicas: 2
+  config:
+    retention.ms: "604800000"
+    retention.bytes: "-1"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: ingestion-acl-bound
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: rag-kafka
+spec:
+  topicName: ingestion.acl_bound
+  partitions: 3
+  replicas: 2
+  config:
+    retention.ms: "604800000"
+    retention.bytes: "-1"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: ingestion-embedded
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: rag-kafka
+spec:
+  topicName: ingestion.embedded
+  partitions: 3
+  replicas: 2
+  config:
+    retention.ms: "604800000"
+    retention.bytes: "-1"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: ingestion-dlq
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: rag-kafka
+spec:
+  topicName: ingestion.dlq
+  partitions: 3
+  replicas: 2
+  config:
+    retention.ms: "2592000000"  # 30 days — failed message review window
+    retention.bytes: "-1"

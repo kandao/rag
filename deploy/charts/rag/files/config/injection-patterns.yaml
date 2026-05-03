@@ -1,0 +1,53 @@
+injection_patterns:
+  - id: INJ-001
+    risk: HIGH
+    description: "Request to ignore instructions"
+    patterns:
+      - "ignore (all |previous |your )?(instructions|rules|guidelines|constraints)"
+      - "ignore (all )?previous (instructions|rules|guidelines|constraints)"
+      - "disregard (all |previous )?instructions"
+      - "forget (all |your |previous )?instructions"
+
+  - id: INJ-002
+    risk: HIGH
+    description: "ACL bypass attempt"
+    patterns:
+      - "bypass (acl|access control|permission|filter|security)"
+      - "show (me )?(all |every )?(document|file|data|record)"
+      - "list (all |every )?(document|file|chunk)"
+      - "retrieve (all |every )(document|chunk)"
+
+  - id: INJ-003
+    risk: HIGH
+    description: "System prompt extraction"
+    patterns:
+      - "reveal (your )?(system )?prompt"
+      - "print (your )?(system )?prompt"
+      - "show (your )?(system )?instructions"
+      - "what (is|are) (your )?(system )?instructions"
+
+  - id: INJ-004
+    risk: HIGH
+    description: "Role escalation / jailbreak"
+    patterns:
+      - "pretend (you are|to be) (an? )?(admin|administrator|superuser|root)"
+      - "act as (an? )?(admin|privileged|unrestricted)"
+      - "you are now (an? )?(admin|unrestricted)"
+      - "DAN mode"
+      - "developer mode"
+
+  - id: INJ-005
+    risk: MEDIUM
+    description: "Permission introspection"
+    patterns:
+      - "what (documents|files|data) (can|do) (i|you) (have|see|access)"
+      - "which (groups|roles) (do i|am i) (have|in)"
+      - "show (my )?(permissions|access level|clearance)"
+      - "what (are |is )?(my )?(current )?(permissions|access|clearance|roles)"
+
+  - id: INJ-006
+    risk: MEDIUM
+    description: "System internals probe"
+    patterns:
+      - "what (is|are) (your )?(index|indices|elasticsearch|system)"
+      - "show (system|internal) (config|configuration|settings)"

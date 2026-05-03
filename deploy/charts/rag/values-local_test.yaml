@@ -1,0 +1,126 @@
+global:
+  environment: local_test
+  imagePullPolicy: Never
+  logLevel: debug
+
+mockUsers:
+  enabled: true
+
+services:
+  elasticsearch:
+    enabled: true
+  redis:
+    enabled: true
+  llmStub:
+    enabled: true
+    image: rag/llm-stub:dev
+  embeddingService:
+    image: rag/embedding-service:dev
+    configEnv:
+      ENVIRONMENT: local_test
+      LOG_LEVEL: debug
+      MODEL_NAME: all-MiniLM-L6-v2
+      BATCH_SIZE: "32"
+      MAX_SEQ_LEN: "8192"
+    resources:
+      requests: { cpu: "100m", memory: "256Mi" }
+  rerankerService:
+    image: rag/reranker-service:dev
+    configEnv:
+      ENVIRONMENT: local_test
+      LOG_LEVEL: debug
+      MODEL_PATH: /models/bge-reranker-large
+      BATCH_SIZE: "32"
+      MAX_SEQUENCE_LENGTH: "512"
+    resources:
+      requests: { cpu: "100m", memory: "256Mi" }
+  queryService:
+    image: rag/query-service:dev
+    replicas: 1
+    configEnv:
+      ENVIRONMENT: local_test
+      LOG_LEVEL: debug
+      TOKEN_SCHEMA_VERSION: v1
+      ACL_VERSION: v1
+      ACL_TOKEN_MAX_COUNT: "30"
+      REDIS_HOST: redis.retrieval-deps
+      REDIS_PORT: "6379"
+      REDIS_AUTH_CACHE_TTL_S: "300"
+      RESULT_CACHE_TTL_S: "60"
+      EMBEDDING_CACHE_TTL_S: "3600"
+      ES_HOSTS: http://elasticsearch.retrieval-deps:9200
+      AUDIT_ES_HOSTS: http://elasticsearch.retrieval-deps:9200
+      AUDIT_INDEX_ALIAS: audit-events-current
+      AUDIT_WRITE_TIMEOUT_MS: "5000"
+      AUDIT_FAIL_CLOSED_MIN_CLEARANCE: "2"
+      RERANKER_URL: http://reranker-service.reranker:8080
+      RERANKER_ENABLED: "false"
+      RERANKER_TIMEOUT_MS: "1000"
+      MODEL_PROVIDER_L0L1: openai
+      MODEL_ENDPOINT_L0L1: http://llm-stub.retrieval-deps:8080/v1/chat/completions
+      MODEL_NAME_L0L1: local-test-stub
+      MODEL_API_KEY_ENV_L0L1: MODEL_API_KEY_L0L1
+      MODEL_TIMEOUT_MS_L0L1: "30000"
+      MODEL_MAX_TOKENS_L0L1: "1024"
+      MODEL_PROVIDER_L2: openai
+      MODEL_ENDPOINT_L2: http://llm-stub.retrieval-deps:8080/v1/chat/completions
+      MODEL_NAME_L2: local-test-stub
+      MODEL_API_KEY_ENV_L2: MODEL_API_KEY_L2
+      MODEL_TIMEOUT_MS_L2: "45000"
+      MODEL_MAX_TOKENS_L2: "1024"
+      MODEL_PROVIDER_L3: openai
+      MODEL_ENDPOINT_L3: http://llm-stub.retrieval-deps:8080/v1/chat/completions
+      MODEL_NAME_L3: local-test-stub
+      MODEL_API_KEY_ENV_L3: MODEL_API_KEY_L3
+      MODEL_TIMEOUT_MS_L3: "45000"
+      MODEL_MAX_TOKENS_L3: "1024"
+      EMBEDDING_PROVIDER_L0L1: private
+      EMBEDDING_API_URL_L0L1: http://embedding-service.retrieval-deps:8080/v1/missing-local-test-bm25
+      EMBEDDING_MODEL_L0L1: all-MiniLM-L6-v2
+      EMBEDDING_DIMS_L0L1: "384"
+      EMBEDDING_API_KEY_ENV_L0L1: EMBEDDING_API_KEY_L0L1
+      EMBEDDING_PROVIDER_L2L3: private
+      EMBEDDING_API_URL_L2L3: http://embedding-service.retrieval-deps:8080/v1/missing-local-test-bm25
+      EMBEDDING_MODEL_L2L3: all-MiniLM-L6-v2
+      EMBEDDING_DIMS_L2L3: "384"
+      EMBEDDING_API_KEY_ENV_L2L3: EMBEDDING_API_KEY_L2L3
+      EMBEDDING_TIMEOUT_MS: "5000"
+      GUARD_RATE_LIMIT_USER_RPM: "1000"
+      GUARD_RATE_LIMIT_WINDOW_S: "60"
+      GUARD_ENUM_SIMILARITY_THRESHOLD: "0.85"
+      GUARD_ENUM_WINDOW_SIZE: "10"
+      GUARD_ENUM_HISTORY_TTL_S: "300"
+      LLM_PARSER_ENABLED: "false"
+      QUERY_EXPANSION_ENABLED: "false"
+      ANSWER_VERIFICATION_ENABLED: "false"
+      QUERY_RESULT_SIZE: "100"
+      HYBRID_QUERY_VECTOR_BOOST: "0.7"
+      HYBRID_QUERY_BM25_BOOST: "0.3"
+      HYBRID_QUERY_K: "100"
+      HYBRID_QUERY_NUM_CANDIDATES: "200"
+      MAX_CANDIDATES_TOTAL: "200"
+      CONTEXT_TOP_N_L0L1: "5"
+      CONTEXT_TOP_N_L2L3: "3"
+      MAX_CHUNK_TOKENS: "500"
+    resources:
+      requests: { cpu: "100m", memory: "256Mi" }
+  gatewayStub:
+    enabled: true
+    image: rag/gateway-stub:dev
+    configEnv:
+      ENVIRONMENT: local_test
+      LOG_LEVEL: debug
+      QUERY_SERVICE_URL: http://query-service.query:8080
+      MOCK_USERS_FILE: /config/mock-users.yaml
+    volumeMounts:
+      - name: mock-users
+        mountPath: /config
+        readOnly: true
+    volumes:
+      - name: mock-users
+        configMap:
+          name: mock-users-config
+    resources:
+      requests: { cpu: "50m", memory: "128Mi" }
+  ingestionWorker:
+    image: rag/ingestion-workers:dev

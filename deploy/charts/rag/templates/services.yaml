@@ -1,0 +1,18 @@
+{{- range $key, $svc := .Values.services }}
+{{- if and $svc.enabled $svc.service.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ default $svc.name $svc.service.name }}
+  namespace: {{ $svc.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" $ "component" $key "app" $svc.name) | indent 4 }}
+spec:
+  selector:
+    app: {{ $svc.name }}
+  ports:
+    - port: {{ default 8080 $svc.service.port }}
+      targetPort: {{ default (default 8080 $svc.containerPort) $svc.service.targetPort }}
+{{- end }}
+{{- end }}

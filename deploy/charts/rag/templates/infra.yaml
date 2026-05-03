@@ -1,0 +1,66 @@
+{{- $es := .Values.services.elasticsearch }}
+{{- if $es.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $es.name }}
+  namespace: {{ $es.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" . "component" "elasticsearch" "app" $es.name) | indent 4 }}
+spec:
+  replicas: {{ default 1 $es.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $es.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $es.name }}
+        app.kubernetes.io/component: elasticsearch
+    spec:
+      containers:
+        - name: {{ $es.name }}
+          image: {{ $es.image }}
+          imagePullPolicy: {{ default .Values.global.imagePullPolicy $es.imagePullPolicy }}
+          env:
+{{ toYaml $es.env | indent 12 }}
+          ports:
+            - containerPort: {{ default 9200 $es.containerPort }}
+          {{- if $es.resources }}
+          resources:
+{{ toYaml $es.resources | indent 12 }}
+          {{- end }}
+{{- end }}
+{{- $redis := .Values.services.redis }}
+{{- if $redis.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $redis.name }}
+  namespace: {{ $redis.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" . "component" "redis" "app" $redis.name) | indent 4 }}
+spec:
+  replicas: {{ default 1 $redis.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $redis.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $redis.name }}
+        app.kubernetes.io/component: redis
+    spec:
+      containers:
+        - name: {{ $redis.name }}
+          image: {{ $redis.image }}
+          imagePullPolicy: {{ default .Values.global.imagePullPolicy $redis.imagePullPolicy }}
+          ports:
+            - containerPort: {{ default 6379 $redis.containerPort }}
+          {{- if $redis.resources }}
+          resources:
+{{ toYaml $redis.resources | indent 12 }}
+          {{- end }}
+{{- end }}

@@ -1,0 +1,25 @@
+global:
+  environment: prod
+  imagePullPolicy: IfNotPresent
+  logLevel: info
+
+services:
+  gatewayStub:
+    enabled: false
+  llmStub:
+    enabled: false
+  queryService:
+    replicas: 3
+    secretName: query-service-secrets
+  ingestionWorker:
+    secretName: ingestion-worker-secrets
+
+externalSecrets:
+  queryService:
+    create: false
+    name: query-service-secrets
+    namespace: query
+  ingestionWorker:
+    create: false
+    name: ingestion-worker-secrets
+    namespace: ingestion

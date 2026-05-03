@@ -1,0 +1,8 @@
+PLACEHOLDER — replace with a real PDF before running ingestion pipeline tests.
+
+Metadata:
+  sensitivity_level: 3
+  allowed_groups: [eng:restricted-ops]
+  topic: governance
+  doc_type: board_minutes
+  year: 2024

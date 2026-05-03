@@ -1,0 +1,58 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: query-service
+    url: http://query-service.query.svc.cluster.local:8080
+    routes:
+      - name: query-route
+        paths:
+          - /v1/query
+        methods:
+          - POST
+        strip_path: false
+    plugins:
+      - name: oidc
+        config:
+          discovery: ${AUTH_JWKS_URI}
+          client_id: rag-api-v1
+          audience: rag-api-v1
+          bearer_only: yes
+      - name: request-transformer
+        config:
+          remove:
+            headers:
+              - X-Trusted-Claims
+              - X-Claims-Sig
+      - name: rate-limiting
+        config:
+          minute: 20
+          policy: redis
+          redis_host: redis-gateway.retrieval-deps
+          redis_port: 6379
+
+  - name: ingest-service
+    url: http://ingestion-coordinator.ingestion.svc.cluster.local:8090
+    routes:
+      - name: ingest-route
+        paths:
+          - /v1/ingest
+        methods:
+          - POST
+        strip_path: false
+    plugins:
+      - name: oidc
+        config:
+          discovery: ${AUTH_JWKS_URI}
+          client_id: rag-api-v1
+          audience: rag-api-v1
+          bearer_only: yes
+          scope_claim: scope
+          scope_required: ingest
+
+plugins:
+  - name: correlation-id
+    config:
+      header_name: X-Request-ID
+      generator: uuid#counter
+      echo_downstream: true

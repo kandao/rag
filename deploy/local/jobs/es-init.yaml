@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: es-init
+  namespace: retrieval-deps
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: es-init
+          image: curlimages/curl:8.7.1
+          env:
+            - name: ES_URL
+              value: "https://elasticsearch.retrieval-deps:9200"
+            - name: ES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-credentials
+                  key: username
+            - name: ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-credentials
+                  key: password
+          volumeMounts:
+            - name: mappings
+              mountPath: /mappings
+            - name: certs
+              mountPath: /certs
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              AUTH="-u ${ES_USERNAME}:${ES_PASSWORD} --cacert /certs/ca.crt"
+
+              # Create L0/L1 physical indexes
+              for INDEX in public_index_v1 internal_index_v1; do
+                curl -sf -X PUT "${ES_URL}/${INDEX}" \
+                  -H "Content-Type: application/json" \
+                  -d @/mappings/l0l1-mapping.json ${AUTH}
+              done
+
+              # Create L2/L3 physical indexes
+              for INDEX in confidential_index_v1 restricted_index_v1; do
+                curl -sf -X PUT "${ES_URL}/${INDEX}" \
+                  -H "Content-Type: application/json" \
+                  -d @/mappings/l2l3-mapping.json ${AUTH}
+              done
+
+              # Create aliases
+              curl -sf -X POST "${ES_URL}/_aliases" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "actions": [
+                    { "add": { "index": "public_index_v1",       "alias": "public_index" } },
+                    { "add": { "index": "internal_index_v1",     "alias": "internal_index" } },
+                    { "add": { "index": "confidential_index_v1", "alias": "confidential_index" } },
+                    { "add": { "index": "restricted_index_v1",   "alias": "restricted_index" } }
+                  ]
+                }' ${AUTH}
+      volumes:
+        - name: mappings
+          configMap:
+            name: es-mappings
+        - name: certs
+          secret:
+            secretName: elasticsearch-tls

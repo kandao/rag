@@ -1,0 +1,40 @@
+global:
+  environment: test
+  imagePullPolicy: IfNotPresent
+  logLevel: info
+
+services:
+  embeddingService:
+    configEnv:
+      ENVIRONMENT: test
+      LOG_LEVEL: info
+  rerankerService:
+    configEnv:
+      ENVIRONMENT: test
+      LOG_LEVEL: info
+  queryService:
+    replicas: 2
+    secretName: query-service-secrets
+    configEnv:
+      ENVIRONMENT: test
+      LOG_LEVEL: info
+      ES_HOSTS: https://elasticsearch.retrieval-deps:9200
+      AUDIT_ES_HOSTS: https://audit-elasticsearch.retrieval-deps:9200
+      REDIS_HOST: redis.retrieval-deps
+      RERANKER_ENABLED: "true"
+      MODEL_ENDPOINT_L0L1: https://api-gateway.test.company.internal/v1/llm/chat/completions
+      EMBEDDING_API_URL_L0L1: https://api-gateway.test.company.internal/v1/embeddings
+  gatewayStub:
+    enabled: false
+  llmStub:
+    enabled: false
+
+externalSecrets:
+  queryService:
+    create: false
+    name: query-service-secrets
+    namespace: query
+  ingestionWorker:
+    create: false
+    name: ingestion-worker-secrets
+    namespace: ingestion

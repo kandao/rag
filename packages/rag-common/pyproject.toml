@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "rag-common"
+version = "1.0.0"
+description = "Shared Pydantic models and ACL utilities for the RAG system"
+packages = [{ include = "rag_common" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pydantic = "^2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

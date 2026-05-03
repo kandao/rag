@@ -1,0 +1,53 @@
+{{- range $key, $svc := .Values.services }}
+{{- if and $svc.enabled (ne $key "elasticsearch") (ne $key "redis") }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $svc.name }}
+  namespace: {{ $svc.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" $ "component" $key "app" $svc.name) | indent 4 }}
+spec:
+  replicas: {{ default 1 $svc.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $svc.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $svc.name }}
+        app.kubernetes.io/component: {{ $key }}
+    spec:
+      {{- if $svc.serviceAccountName }}
+      serviceAccountName: {{ $svc.serviceAccountName }}
+      {{- end }}
+      containers:
+        - name: {{ $svc.name }}
+          image: {{ $svc.image }}
+          imagePullPolicy: {{ default $.Values.global.imagePullPolicy $svc.imagePullPolicy }}
+          {{- if $svc.command }}
+          command:
+{{ toYaml $svc.command | indent 12 }}
+          {{- end }}
+          {{- if $svc.args }}
+          args:
+{{ toYaml $svc.args | indent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: {{ default 8080 $svc.containerPort }}
+          {{- include "rag.envFrom" $svc | nindent 10 }}
+          {{- if $svc.volumeMounts }}
+          volumeMounts:
+{{ toYaml $svc.volumeMounts | indent 12 }}
+          {{- end }}
+          {{- if $svc.resources }}
+          resources:
+{{ toYaml $svc.resources | indent 12 }}
+          {{- end }}
+      {{- if $svc.volumes }}
+      volumes:
+{{ toYaml $svc.volumes | indent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,126 @@
+{{- if .Values.elasticsearchInit.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: es-init
+  namespace: {{ .Values.services.elasticsearch.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" . "component" "es-init" "app" "es-init") | indent 4 }}
+spec:
+  ttlSecondsAfterFinished: {{ default 300 .Values.elasticsearchInit.ttlSecondsAfterFinished }}
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: es-init
+          image: {{ .Values.elasticsearchInit.image }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.elasticsearchInit.configMapName }}
+            {{- if .Values.elasticsearchInit.secretName }}
+            - secretRef:
+                name: {{ .Values.elasticsearchInit.secretName }}
+                optional: {{ default false .Values.elasticsearchInit.secretOptional }}
+            {{- end }}
+          volumeMounts:
+            - name: mappings
+              mountPath: /mappings
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              AUTH=""
+              if [ -n "${ES_USERNAME:-}" ]; then
+                AUTH="-u ${ES_USERNAME}:${ES_PASSWORD}"
+              fi
+
+              for INDEX in public_index_v1 internal_index_v1; do
+                curl -sf -X PUT "${ES_URL}/${INDEX}" -H "Content-Type: application/json" -d @/mappings/l0l1-mapping.json ${AUTH}
+              done
+
+              for INDEX in confidential_index_v1 restricted_index_v1; do
+                curl -sf -X PUT "${ES_URL}/${INDEX}" -H "Content-Type: application/json" -d @/mappings/l2l3-mapping.json ${AUTH}
+              done
+
+              curl -sf -X POST "${ES_URL}/_aliases" -H "Content-Type: application/json" -d '{
+                "actions": [
+                  { "add": { "index": "public_index_v1",       "alias": "public_index" } },
+                  { "add": { "index": "internal_index_v1",     "alias": "internal_index" } },
+                  { "add": { "index": "confidential_index_v1", "alias": "confidential_index" } },
+                  { "add": { "index": "restricted_index_v1",   "alias": "restricted_index" } }
+                ]
+              }' ${AUTH}
+      volumes:
+        - name: mappings
+          configMap:
+            name: {{ .Values.elasticsearchMappings.name }}
+{{- end }}
+{{- if .Values.auditElasticsearchInit.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: audit-es-init
+  namespace: {{ .Values.services.elasticsearch.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" . "component" "audit-es-init" "app" "audit-es-init") | indent 4 }}
+spec:
+  ttlSecondsAfterFinished: {{ default 300 .Values.auditElasticsearchInit.ttlSecondsAfterFinished }}
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: audit-es-init
+          image: {{ .Values.auditElasticsearchInit.image }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.auditElasticsearchInit.configMapName }}
+            {{- if .Values.auditElasticsearchInit.secretName }}
+            - secretRef:
+                name: {{ .Values.auditElasticsearchInit.secretName }}
+                optional: {{ default false .Values.auditElasticsearchInit.secretOptional }}
+            {{- end }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              AUTH=""
+              if [ -n "${ES_USERNAME:-}" ]; then
+                AUTH="-u ${ES_USERNAME}:${ES_PASSWORD}"
+              fi
+              INDEX="audit-events-$(date +%Y-%m)"
+              curl -sf -X PUT "${AUDIT_ES_URL}/${INDEX}" -H "Content-Type: application/json" -d '{
+                "mappings": {
+                  "properties": {
+                    "event_id": { "type": "keyword" },
+                    "request_id": { "type": "keyword" },
+                    "timestamp": { "type": "date" },
+                    "user_id": { "type": "keyword" },
+                    "claims_digest": { "type": "keyword" },
+                    "acl_key": { "type": "keyword" },
+                    "acl_version": { "type": "keyword" },
+                    "target_indexes": { "type": "keyword" },
+                    "retrieved_chunk_ids": { "type": "keyword" },
+                    "ranked_chunk_ids": { "type": "keyword" },
+                    "sensitivity_levels_accessed": { "type": "integer" },
+                    "model_path": { "type": "keyword" },
+                    "authorization_decision": { "type": "keyword" },
+                    "query_risk_signal": { "type": "keyword" },
+                    "answer_returned": { "type": "boolean" },
+                    "latency_ms": { "type": "long" },
+                    "event_type": { "type": "keyword" },
+                    "guard_pattern_id": { "type": "keyword" },
+                    "partial_result": { "type": "boolean" }
+                  }
+                },
+                "settings": { "number_of_shards": 1, "number_of_replicas": 1 }
+              }' ${AUTH}
+              curl -sf -X POST "${AUDIT_ES_URL}/_aliases" -H "Content-Type: application/json" -d "{
+                \"actions\": [
+                  { \"add\": { \"index\": \"${INDEX}\", \"alias\": \"audit-events-current\" } }
+                ]
+              }" ${AUTH}
+{{- end }}

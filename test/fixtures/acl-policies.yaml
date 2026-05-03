@@ -1,0 +1,25 @@
+acl_policies:
+  - source_pattern: "public/*"
+    allowed_groups: ["eng:public"]
+    allowed_roles: []
+    sensitivity_level: 0
+
+  - source_pattern: "internal/engineering_*"
+    allowed_groups: ["eng:engineering"]
+    allowed_roles: []
+    sensitivity_level: 1
+
+  - source_pattern: "internal/hr_*"
+    allowed_groups: ["eng:public", "eng:hr"]
+    allowed_roles: []
+    sensitivity_level: 1
+
+  - source_pattern: "confidential/*"
+    allowed_groups: ["eng:infra"]
+    allowed_roles: ["manager"]
+    sensitivity_level: 2
+
+  - source_pattern: "restricted/*"
+    allowed_groups: ["eng:restricted-ops"]
+    allowed_roles: []
+    sensitivity_level: 3

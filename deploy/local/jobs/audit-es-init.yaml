@@ -1,0 +1,81 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: audit-es-init
+  namespace: retrieval-deps
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: audit-es-init
+          image: curlimages/curl:8.7.1
+          env:
+            - name: AUDIT_ES_URL
+              value: "https://audit-elasticsearch.retrieval-deps:9200"
+            - name: ES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: audit-es-credentials
+                  key: username
+            - name: ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: audit-es-credentials
+                  key: password
+          volumeMounts:
+            - name: certs
+              mountPath: /certs
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              AUTH="-u ${ES_USERNAME}:${ES_PASSWORD} --cacert /certs/ca.crt"
+              INDEX="audit-events-$(date +%Y-%m)"
+
+              curl -sf -X PUT "${AUDIT_ES_URL}/${INDEX}" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "mappings": {
+                    "properties": {
+                      "event_id":                    { "type": "keyword" },
+                      "request_id":                  { "type": "keyword" },
+                      "timestamp":                   { "type": "date" },
+                      "user_id":                     { "type": "keyword" },
+                      "claims_digest":               { "type": "keyword" },
+                      "acl_key":                     { "type": "keyword" },
+                      "acl_version":                 { "type": "keyword" },
+                      "target_indexes":              { "type": "keyword" },
+                      "retrieved_chunk_ids":         { "type": "keyword" },
+                      "ranked_chunk_ids":            { "type": "keyword" },
+                      "sensitivity_levels_accessed": { "type": "integer" },
+                      "model_path":                  { "type": "keyword" },
+                      "authorization_decision":      { "type": "keyword" },
+                      "query_risk_signal":           { "type": "keyword" },
+                      "answer_returned":             { "type": "boolean" },
+                      "latency_ms":                  { "type": "long" },
+                      "event_type":                  { "type": "keyword" },
+                      "guard_pattern_id":            { "type": "keyword" },
+                      "partial_result":              { "type": "boolean" }
+                    }
+                  },
+                  "settings": {
+                    "number_of_shards": 1,
+                    "number_of_replicas": 1
+                  }
+                }' ${AUTH}
+
+              # Create alias pointing to current month index
+              curl -sf -X POST "${AUDIT_ES_URL}/_aliases" \
+                -H "Content-Type: application/json" \
+                -d "{
+                  \"actions\": [
+                    { \"add\": { \"index\": \"${INDEX}\", \"alias\": \"audit-events-current\" } }
+                  ]
+                }" ${AUTH}
+      volumes:
+        - name: certs
+          secret:
+            secretName: audit-elasticsearch-tls

@@ -1,0 +1,299 @@
+---
+# llm-stub — local-only stub that mimics the OpenAI chat completions API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-stub
+  namespace: retrieval-deps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llm-stub
+  template:
+    metadata:
+      labels:
+        app: llm-stub
+    spec:
+      containers:
+        - name: llm-stub
+          image: rag/llm-stub:dev
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-stub
+  namespace: retrieval-deps
+spec:
+  selector:
+    app: llm-stub
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+# embedding-service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: embedding-service
+  namespace: retrieval-deps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: embedding-service
+  template:
+    metadata:
+      labels:
+        app: embedding-service
+    spec:
+      containers:
+        - name: embedding-service
+          image: rag/embedding-service:dev
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: MODEL_NAME
+              value: "all-MiniLM-L6-v2"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: embedding-service
+  namespace: retrieval-deps
+spec:
+  selector:
+    app: embedding-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+# reranker-service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reranker-service
+  namespace: reranker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reranker-service
+  template:
+    metadata:
+      labels:
+        app: reranker-service
+    spec:
+      containers:
+        - name: reranker-service
+          image: rag/reranker-service:dev
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reranker-service
+  namespace: reranker
+spec:
+  selector:
+    app: reranker-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+# query-service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: query-service
+  namespace: query
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: query-service
+  template:
+    metadata:
+      labels:
+        app: query-service
+    spec:
+      containers:
+        - name: query-service
+          image: rag/query-service:dev
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: REDIS_HOST
+              value: "redis.retrieval-deps"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: ES_HOSTS
+              value: "http://elasticsearch.retrieval-deps:9200"
+            - name: ES_USERNAME
+              value: ""
+            - name: ES_PASSWORD
+              value: ""
+            - name: CLAIMS_SIGNING_KEY
+              value: "dev-signing-key-change-in-production"
+            - name: RERANKER_URL
+              value: "http://reranker-service.reranker:8080"
+            - name: RERANKER_ENABLED
+              value: "false"
+            - name: MODEL_PROVIDER_L0L1
+              value: "openai"
+            - name: MODEL_ENDPOINT_L0L1
+              value: "http://llm-stub.retrieval-deps:8080/v1/chat/completions"
+            - name: MODEL_ENDPOINT_L2
+              value: "http://llm-stub.retrieval-deps:8080/v1/chat/completions"
+            - name: MODEL_ENDPOINT_L3
+              value: "http://llm-stub.retrieval-deps:8080/v1/chat/completions"
+            - name: EMBEDDING_API_URL_L0L1
+              value: "http://embedding-service.retrieval-deps:8080/v1/embed"
+            - name: GUARD_RATE_LIMIT_USER_RPM
+              value: "1000"
+            - name: AUDIT_ES_HOSTS
+              value: "http://elasticsearch.retrieval-deps:9200"
+            - name: AUDIT_INDEX_ALIAS
+              value: "audit-events-current"
+            - name: LOG_LEVEL
+              value: "debug"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: query-service
+  namespace: query
+spec:
+  selector:
+    app: query-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+# gateway-stub
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-stub
+  namespace: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway-stub
+  template:
+    metadata:
+      labels:
+        app: gateway-stub
+    spec:
+      containers:
+        - name: gateway-stub
+          image: rag/gateway-stub:dev
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: QUERY_SERVICE_URL
+              value: "http://query-service.query:8080"
+            - name: CLAIMS_SIGNING_KEY
+              value: "dev-signing-key-change-in-production"
+            - name: MOCK_USERS_FILE
+              value: "/config/mock-users.yaml"
+          volumeMounts:
+            - name: mock-users
+              mountPath: /config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+      volumes:
+        - name: mock-users
+          configMap:
+            name: mock-users-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-stub
+  namespace: api-gateway
+spec:
+  selector:
+    app: gateway-stub
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+# ConfigMap: mock users
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mock-users-config
+  namespace: api-gateway
+data:
+  mock-users.yaml: |
+    users:
+      - token: "test-token-l0"
+        claims:
+          user_id: "user_l0"
+          groups: ["eng:public"]
+          role: null
+          clearance_level: 0
+      - token: "test-token-l1"
+        claims:
+          user_id: "user_l1"
+          groups: ["eng:engineering", "eng:public"]
+          role: null
+          clearance_level: 1
+      - token: "test-token-l1-b"
+        claims:
+          user_id: "user_l1_b"
+          groups: ["eng:public"]
+          role: null
+          clearance_level: 1
+      - token: "test-token-l2"
+        claims:
+          user_id: "user_l2"
+          groups: ["eng:engineering", "eng:infra"]
+          role: "manager"
+          clearance_level: 2
+      - token: "test-token-l3"
+        claims:
+          user_id: "user_l3"
+          groups: ["eng:restricted-ops"]
+          role: null
+          clearance_level: 3
+      - token: "test-token-attacker"
+        claims:
+          user_id: "attacker"
+          groups: ["eng:public"]
+          role: null
+          clearance_level: 0
+      - token: "test-token-no-acl"
+        claims:
+          user_id: "user_no_acl"
+          groups: []
+          role: null
+          clearance_level: 0

@@ -1,0 +1,13 @@
+# ACL group hierarchy for token compression.
+# Format: child: parent
+# If a user has BOTH child and parent tokens, the child is removed (covered by parent).
+# Only add entries where the parent fully covers the child's document access.
+# Verify coverage guarantees before adding any entry.
+#
+# Example: all eng:infra-prod members are also eng:infra members for document access purposes.
+hierarchy:
+  eng:infra-prod: eng:infra
+  eng:infra-staging: eng:infra
+  eng:eng-backend: eng:engineering
+  eng:eng-frontend: eng:engineering
+  eng:eng-platform: eng:engineering

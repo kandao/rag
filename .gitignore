@@ -1,0 +1,20 @@
+.env
+.env.*
+!.env.example
+
+# Python local artifacts.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local Kubernetes/Helm secret material. Commit only *.example.yaml files.
+deploy/**/*.secret.yaml
+deploy/**/*.secrets.yaml
+deploy/**/secret-*.yaml
+deploy/**/secrets-*.yaml
+deploy/charts/rag/values-*.secret.yaml
+!deploy/**/*.example.yaml
+
+# Local render/output scratch files.
+deploy/rendered/
+tmp/

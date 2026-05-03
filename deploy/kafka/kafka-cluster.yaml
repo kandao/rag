@@ -1,0 +1,32 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: rag-kafka
+  namespace: kafka
+spec:
+  kafka:
+    replicas: 3
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false  # mTLS handled by Istio sidecar
+    storage:
+      type: persistent-claim
+      size: 100Gi
+      class: ssd
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      default.replication.factor: 2
+      min.insync.replicas: 2
+  zookeeper:
+    # Switch to KRaft mode (Kafka 3.3+) to eliminate ZooKeeper when stable
+    replicas: 3
+    storage:
+      type: persistent-claim
+      size: 10Gi
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}

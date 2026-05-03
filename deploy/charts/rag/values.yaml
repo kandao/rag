@@ -1,0 +1,311 @@
+global:
+  environment: prod
+  createNamespaces: true
+  imagePullPolicy: IfNotPresent
+  logLevel: info
+  tokenSchemaVersion: v1
+  aclVersion: v1
+
+namespaces:
+  - api-gateway
+  - query
+  - reranker
+  - ingestion
+  - retrieval-deps
+
+queryConfigFiles:
+  enabled: true
+  name: query-config-files
+
+elasticsearchMappings:
+  enabled: true
+  name: es-mappings
+
+mockUsers:
+  enabled: false
+  name: mock-users-config
+
+seedData:
+  enabled: false
+  namespace: ingestion
+
+externalSecrets: {}
+
+services:
+  elasticsearch:
+    enabled: false
+    name: elasticsearch
+    namespace: retrieval-deps
+    image: elasticsearch:8.13.4
+    containerPort: 9200
+    replicas: 1
+    env:
+      - name: discovery.type
+        value: single-node
+      - name: xpack.security.enabled
+        value: "false"
+      - name: ES_JAVA_OPTS
+        value: "-Xms512m -Xmx512m"
+    resources:
+      requests: { cpu: "250m", memory: "768Mi" }
+      limits: { memory: "1Gi" }
+    service:
+      enabled: true
+      port: 9200
+      targetPort: 9200
+
+  redis:
+    enabled: false
+    name: redis
+    namespace: retrieval-deps
+    image: redis:7.2-alpine
+    containerPort: 6379
+    replicas: 1
+    resources:
+      requests: { cpu: "50m", memory: "64Mi" }
+    service:
+      enabled: true
+      port: 6379
+      targetPort: 6379
+
+  llmStub:
+    enabled: false
+    name: llm-stub
+    namespace: retrieval-deps
+    image: rag/llm-stub:v1.0
+    replicas: 1
+    containerPort: 8080
+    service:
+      enabled: true
+      port: 8080
+      targetPort: 8080
+
+  embeddingService:
+    enabled: true
+    name: embedding-service
+    namespace: retrieval-deps
+    image: rag/embedding-service:v1.0
+    replicas: 1
+    containerPort: 8080
+    configMapName: embedding-service-config
+    configEnv:
+      ENVIRONMENT: prod
+      LOG_LEVEL: info
+      MODEL_NAME: BAAI/bge-m3
+      BATCH_SIZE: "32"
+      MAX_SEQ_LEN: "8192"
+    resources:
+      requests: { cpu: "500m", memory: "1Gi" }
+      limits: { cpu: "2", memory: "4Gi" }
+    service:
+      enabled: true
+      port: 8080
+      targetPort: 8080
+
+  rerankerService:
+    enabled: true
+    name: reranker-service
+    namespace: reranker
+    image: rag/reranker-service:v1.0
+    replicas: 1
+    containerPort: 8080
+    serviceAccountName: reranker-sa
+    configMapName: reranker-service-config
+    configEnv:
+      ENVIRONMENT: prod
+      LOG_LEVEL: info
+      MODEL_PATH: /models/bge-reranker-large
+      BATCH_SIZE: "32"
+      MAX_SEQUENCE_LENGTH: "512"
+    resources:
+      requests: { cpu: "1", memory: "2Gi" }
+      limits: { cpu: "4", memory: "8Gi" }
+    service:
+      enabled: true
+      port: 8080
+      targetPort: 8080
+
+  queryService:
+    enabled: true
+    name: query-service
+    namespace: query
+    image: rag/query-service:v1.0
+    replicas: 2
+    containerPort: 8080
+    serviceAccountName: query-service-sa
+    configMapName: query-service-config
+    secretName: query-service-secrets
+    configEnv:
+      ENVIRONMENT: prod
+      LOG_LEVEL: info
+      TOKEN_SCHEMA_VERSION: v1
+      ACL_VERSION: v1
+      ACL_TOKEN_MAX_COUNT: "30"
+      REDIS_HOST: redis.retrieval-deps
+      REDIS_PORT: "6379"
+      REDIS_AUTH_CACHE_TTL_S: "300"
+      RESULT_CACHE_TTL_S: "60"
+      EMBEDDING_CACHE_TTL_S: "3600"
+      ES_HOSTS: https://elasticsearch.retrieval-deps:9200
+      AUDIT_ES_HOSTS: https://audit-elasticsearch.retrieval-deps:9200
+      AUDIT_INDEX_ALIAS: audit-events-current
+      AUDIT_WRITE_TIMEOUT_MS: "5000"
+      AUDIT_FAIL_CLOSED_MIN_CLEARANCE: "2"
+      RERANKER_URL: http://reranker-service.reranker:8080
+      RERANKER_ENABLED: "true"
+      RERANKER_TIMEOUT_MS: "1000"
+      MODEL_PROVIDER_L0L1: openai
+      MODEL_ENDPOINT_L0L1: https://api-gateway.company.internal/v1/llm/chat/completions
+      MODEL_NAME_L0L1: gpt-4o
+      MODEL_API_KEY_ENV_L0L1: MODEL_API_KEY_L0L1
+      MODEL_TIMEOUT_MS_L0L1: "30000"
+      MODEL_MAX_TOKENS_L0L1: "1024"
+      MODEL_PROVIDER_L2: openai
+      MODEL_ENDPOINT_L2: http://llm-private.retrieval-deps:8080/v1/chat/completions
+      MODEL_NAME_L2: llama-3-70b-instruct
+      MODEL_API_KEY_ENV_L2: MODEL_API_KEY_L2
+      MODEL_TIMEOUT_MS_L2: "45000"
+      MODEL_MAX_TOKENS_L2: "1024"
+      MODEL_PROVIDER_L3: openai
+      MODEL_ENDPOINT_L3: http://llm-restricted.retrieval-deps:8080/v1/chat/completions
+      MODEL_NAME_L3: llama-3-70b-instruct
+      MODEL_API_KEY_ENV_L3: MODEL_API_KEY_L3
+      MODEL_TIMEOUT_MS_L3: "45000"
+      MODEL_MAX_TOKENS_L3: "1024"
+      EMBEDDING_PROVIDER_L0L1: openai
+      EMBEDDING_API_URL_L0L1: https://api-gateway.company.internal/v1/embeddings
+      EMBEDDING_MODEL_L0L1: text-embedding-3-small
+      EMBEDDING_DIMS_L0L1: "1536"
+      EMBEDDING_API_KEY_ENV_L0L1: EMBEDDING_API_KEY_L0L1
+      EMBEDDING_PROVIDER_L2L3: private
+      EMBEDDING_API_URL_L2L3: http://embedding-service.retrieval-deps:8080/v1/embed
+      EMBEDDING_MODEL_L2L3: bge-m3
+      EMBEDDING_DIMS_L2L3: "1024"
+      EMBEDDING_API_KEY_ENV_L2L3: EMBEDDING_API_KEY_L2L3
+      EMBEDDING_TIMEOUT_MS: "5000"
+      GUARD_RATE_LIMIT_USER_RPM: "20"
+      GUARD_RATE_LIMIT_WINDOW_S: "60"
+      GUARD_ENUM_SIMILARITY_THRESHOLD: "0.85"
+      GUARD_ENUM_WINDOW_SIZE: "10"
+      GUARD_ENUM_HISTORY_TTL_S: "300"
+      LLM_PARSER_ENABLED: "false"
+      LLM_PARSER_MODEL: gpt-4o-mini
+      LLM_PARSER_TIMEOUT_MS: "2000"
+      QUERY_EXPANSION_ENABLED: "false"
+      QUERY_EXPANSION_MAX_VARIANTS: "3"
+      ANSWER_VERIFICATION_ENABLED: "false"
+      QUERY_RESULT_SIZE: "100"
+      HYBRID_QUERY_VECTOR_BOOST: "0.7"
+      HYBRID_QUERY_BM25_BOOST: "0.3"
+      HYBRID_QUERY_K: "100"
+      HYBRID_QUERY_NUM_CANDIDATES: "200"
+      MAX_CANDIDATES_TOTAL: "200"
+      CONTEXT_TOP_N_L0L1: "5"
+      CONTEXT_TOP_N_L2L3: "3"
+      MAX_CHUNK_TOKENS: "500"
+    volumeMounts:
+      - name: query-config-files
+        mountPath: /config
+        readOnly: true
+    volumes:
+      - name: query-config-files
+        configMap:
+          name: query-config-files
+    resources:
+      requests: { cpu: "1", memory: "1Gi" }
+      limits: { cpu: "2", memory: "2Gi" }
+    service:
+      enabled: true
+      port: 8080
+      targetPort: 8080
+
+  gatewayStub:
+    enabled: false
+    name: gateway-stub
+    namespace: api-gateway
+    image: rag/gateway-stub:v1.0
+    replicas: 1
+    containerPort: 8080
+    serviceAccountName: api-gateway-sa
+    configMapName: gateway-stub-config
+    secretName: gateway-stub-secrets
+    configEnv:
+      ENVIRONMENT: prod
+      LOG_LEVEL: info
+      QUERY_SERVICE_URL: http://query-service.query:8080
+      MOCK_USERS_FILE: /config/mock-users.yaml
+    resources:
+      requests: { cpu: "50m", memory: "128Mi" }
+    service:
+      enabled: true
+      port: 8080
+      targetPort: 8080
+
+  ingestionWorker:
+    enabled: false
+    name: ingestion-worker
+    namespace: ingestion
+    image: rag/ingestion-workers:v1.0
+    replicas: 1
+    containerPort: 8080
+    serviceAccountName: ingestion-worker-sa
+    configMapName: ingestion-worker-config
+    secretName: ingestion-worker-secrets
+    configEnv:
+      ENVIRONMENT: prod
+      LOG_LEVEL: info
+      KAFKA_BOOTSTRAP_SERVERS: kafka.kafka.svc.cluster.local:9092
+      KAFKA_CONSUMER_GROUP: ingestion-workers
+      KAFKA_SECURITY_PROTOCOL: PLAINTEXT
+      KAFKA_TOPIC_RAW: ingestion.raw
+      KAFKA_TOPIC_PARSED: ingestion.parsed
+      KAFKA_TOPIC_SCANNED: ingestion.scanned
+      KAFKA_TOPIC_QUARANTINE: ingestion.quarantine
+      KAFKA_TOPIC_CHUNKED: ingestion.chunked
+      KAFKA_TOPIC_ENRICHED: ingestion.enriched
+      KAFKA_TOPIC_ACL_BOUND: ingestion.acl_bound
+      KAFKA_TOPIC_EMBEDDED: ingestion.embedded
+      KAFKA_TOPIC_DLQ: ingestion.dlq
+      REDIS_HOST: redis.retrieval-deps
+      REDIS_PORT: "6379"
+      ES_HOSTS: https://elasticsearch.retrieval-deps:9200
+      EMBEDDING_PROVIDER_L0L1: openai
+      EMBEDDING_MODEL_L0L1: text-embedding-3-small
+      EMBEDDING_DIMS_L0L1: "1536"
+      EMBEDDING_API_URL_L0L1: https://api-gateway.company.internal/v1/embeddings
+      EMBEDDING_API_KEY_ENV_L0L1: EMBEDDING_API_KEY_L0L1
+      EMBEDDING_BATCH_SIZE_L0L1: "200"
+      EMBEDDING_PROVIDER_L2L3: private
+      EMBEDDING_MODEL_L2L3: bge-m3
+      EMBEDDING_DIMS_L2L3: "1024"
+      EMBEDDING_API_URL_L2L3: http://embedding-service.retrieval-deps:8080/v1/embed
+      EMBEDDING_API_KEY_ENV_L2L3: EMBEDDING_API_KEY_L2L3
+      EMBEDDING_BATCH_SIZE_L2L3: "32"
+      EMBEDDING_TIMEOUT_MS: "30000"
+      CONNECTOR_PULL_INTERVAL_S: "3600"
+      CONNECTOR_MAX_FILE_SIZE_MB: "50"
+      TOKEN_SCHEMA_VERSION: v1
+      ACL_VERSION: v1
+      CHUNK_SIZE_TOKENS: "400"
+      CHUNK_OVERLAP_TOKENS: "75"
+      CHUNKER_TOKENIZER: cl100k_base
+    resources:
+      requests: { cpu: "500m", memory: "512Mi" }
+
+elasticsearchInit:
+  enabled: false
+  image: curlimages/curl:8.7.1
+  configMapName: es-init-config
+  configEnv:
+    ES_URL: https://elasticsearch.retrieval-deps:9200
+  secretName: elasticsearch-credentials
+  secretOptional: true
+
+auditElasticsearchInit:
+  enabled: false
+  image: curlimages/curl:8.7.1
+  configMapName: audit-es-init-config
+  configEnv:
+    AUDIT_ES_URL: https://audit-elasticsearch.retrieval-deps:9200
+  secretName: audit-es-credentials
+  secretOptional: true

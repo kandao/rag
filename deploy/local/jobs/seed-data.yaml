@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seed-data
+  namespace: ingestion
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: ingestion-worker-sa
+      containers:
+        - name: seed-data
+          image: rag/ingestion-workers:v1.0
+          command:
+            - python
+            - -m
+            - workers.connector_worker
+            - --seed
+            - /fixtures
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka.kafka.svc.cluster.local:9092
+            - name: KAFKA_TOPIC_RAW
+              value: ingestion.raw
+          volumeMounts:
+            - name: fixtures
+              mountPath: /fixtures
+            - name: acl-policies
+              mountPath: /config/acl-policies.yaml
+              subPath: acl-policies.yaml
+      volumes:
+        - name: fixtures
+          configMap:
+            name: test-fixtures
+        - name: acl-policies
+          configMap:
+            name: acl-policies-config

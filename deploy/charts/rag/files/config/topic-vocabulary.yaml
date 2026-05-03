@@ -1,0 +1,42 @@
+topics:
+  finance:
+    - revenue
+    - budget
+    - expense
+    - finance
+    - accounting
+    - tax
+    - fiscal
+    - reporting
+  hr:
+    - employee
+    - hiring
+    - leave
+    - payroll
+    - onboarding
+    - performance review
+    - hr policy
+  legal:
+    - contract
+    - agreement
+    - litigation
+    - compliance
+    - regulatory
+    - legal
+    - board
+    - minutes
+    - memo
+    - m&a
+    - merger
+    - acquisition
+    - confidential
+    - restricted
+    - classified
+  engineering:
+    - deployment
+    - architecture
+    - service
+    - API
+    - infrastructure
+    - engineering
+  default: []

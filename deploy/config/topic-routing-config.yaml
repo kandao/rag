@@ -1,0 +1,7 @@
+topic_index_affinity:
+  finance: internal_index
+  hr: internal_index
+  legal: confidential_index
+  # engineering intentionally has no affinity so local E2E can validate
+  # public + internal multi-index merging.
+  # Topics not listed → no narrowing; search all accessible indexes

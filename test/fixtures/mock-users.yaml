@@ -1,0 +1,49 @@
+users:
+  - token: "test-token-l0"
+    claims:
+      user_id: "user_l0"
+      groups: ["eng:public"]
+      role: null
+      clearance_level: 0
+
+  - token: "test-token-l1"
+    claims:
+      user_id: "user_l1"
+      groups: ["eng:engineering", "eng:public"]
+      role: null
+      clearance_level: 1
+
+  - token: "test-token-l1-b"
+    claims:
+      user_id: "user_l1_b"
+      groups: ["eng:public"]
+      role: null
+      clearance_level: 1
+
+  - token: "test-token-l2"
+    claims:
+      user_id: "user_l2"
+      groups: ["eng:engineering", "eng:infra"]
+      role: "manager"
+      clearance_level: 2
+
+  - token: "test-token-l3"
+    claims:
+      user_id: "user_l3"
+      groups: ["eng:restricted-ops"]
+      role: null
+      clearance_level: 3
+
+  - token: "test-token-attacker"
+    claims:
+      user_id: "attacker"
+      groups: ["eng:public"]
+      role: null
+      clearance_level: 0
+
+  - token: "test-token-no-acl"
+    claims:
+      user_id: "user_no_acl"
+      groups: []
+      role: null
+      clearance_level: 0

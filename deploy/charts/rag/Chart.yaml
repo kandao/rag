@@ -1,0 +1,6 @@
+apiVersion: v2
+name: rag
+description: RAG v1.0 — Helm chart for all services and infrastructure
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

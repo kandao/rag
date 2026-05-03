@@ -1,0 +1,104 @@
+{{- range $key, $svc := .Values.services }}
+{{- if and $svc.enabled $svc.configEnv }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $svc.configMapName }}
+  namespace: {{ $svc.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" $ "component" $key "app" $svc.name) | indent 4 }}
+data:
+{{- range $envName, $envValue := $svc.configEnv }}
+  {{ $envName }}: {{ $envValue | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.queryConfigFiles.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.queryConfigFiles.name }}
+  namespace: {{ .Values.services.queryService.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" . "component" "query-config-files" "app" .Values.services.queryService.name) | indent 4 }}
+data:
+{{ (.Files.Glob "files/config/*.yaml").AsConfig | indent 2 }}
+{{- end }}
+{{- if .Values.elasticsearchMappings.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.elasticsearchMappings.name }}
+  namespace: {{ .Values.services.elasticsearch.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" . "component" "es-mappings" "app" .Values.services.elasticsearch.name) | indent 4 }}
+data:
+{{ (.Files.Glob "files/mappings/*.json").AsConfig | indent 2 }}
+{{- end }}
+{{- if .Values.mockUsers.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.mockUsers.name }}
+  namespace: {{ .Values.services.gatewayStub.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" . "component" "mock-users" "app" .Values.services.gatewayStub.name) | indent 4 }}
+data:
+  mock-users.yaml: |
+{{ .Files.Get "files/fixtures/mock-users.yaml" | indent 4 }}
+{{- end }}
+{{- if .Values.seedData.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: acl-policies-config
+  namespace: {{ .Values.seedData.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" . "component" "acl-policies" "app" "seed-data") | indent 4 }}
+data:
+  acl-policies.yaml: |
+{{ .Files.Get "files/fixtures/acl-policies.yaml" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-fixtures
+  namespace: {{ .Values.seedData.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" . "component" "test-fixtures" "app" "seed-data") | indent 4 }}
+data:
+{{ (.Files.Glob "files/fixtures/documents/**").AsConfig | indent 2 }}
+{{- end }}
+{{- if .Values.elasticsearchInit.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.elasticsearchInit.configMapName }}
+  namespace: {{ .Values.services.elasticsearch.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" . "component" "es-init" "app" "es-init") | indent 4 }}
+data:
+{{- range $envName, $envValue := .Values.elasticsearchInit.configEnv }}
+  {{ $envName }}: {{ $envValue | quote }}
+{{- end }}
+{{- end }}
+{{- if .Values.auditElasticsearchInit.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.auditElasticsearchInit.configMapName }}
+  namespace: {{ .Values.services.elasticsearch.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" . "component" "audit-es-init" "app" "audit-es-init") | indent 4 }}
+data:
+{{- range $envName, $envValue := .Values.auditElasticsearchInit.configEnv }}
+  {{ $envName }}: {{ $envValue | quote }}
+{{- end }}
+{{- end }}

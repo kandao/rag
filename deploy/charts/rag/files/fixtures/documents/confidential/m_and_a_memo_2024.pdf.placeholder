@@ -1,0 +1,9 @@
+PLACEHOLDER — replace with a real PDF before running ingestion pipeline tests.
+
+Metadata:
+  sensitivity_level: 2
+  allowed_groups: [eng:infra]
+  allowed_roles: [manager]
+  topic: mergers_and_acquisitions
+  doc_type: memo
+  year: 2024

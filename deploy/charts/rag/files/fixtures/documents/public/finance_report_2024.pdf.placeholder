@@ -1,0 +1,8 @@
+PLACEHOLDER — replace with a real PDF before running ingestion pipeline tests.
+
+Metadata:
+  sensitivity_level: 0
+  allowed_groups: [eng:public]
+  topic: finance
+  doc_type: report
+  year: 2024
