@@ -15,6 +15,7 @@ services:
     enabled: false
     image: rag/llm-stub:dev
   embeddingService:
+    enabled: false
     image: rag/embedding-service:dev
     configEnv:
       ENVIRONMENT: local
@@ -23,6 +24,7 @@ services:
       BATCH_SIZE: "32"
       MAX_SEQ_LEN: "8192"
   rerankerService:
+    enabled: false
     image: rag/reranker-service:dev
     configEnv:
       ENVIRONMENT: local
