@@ -9,6 +9,11 @@ mockUsers:
 services:
   elasticsearch:
     enabled: true
+    persistence:
+      enabled: true
+      claimName: elasticsearch-data
+      size: 5Gi
+      keepOnHelmUninstall: true
   redis:
     enabled: true
   llmStub:

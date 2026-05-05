@@ -4,32 +4,14 @@ from elasticsearch import AsyncElasticsearch
 
 from config import settings
 from kafka_worker import KafkaWorker
+from pipeline.index import (
+    INDEX_BY_SENSITIVITY as _INDEX_BY_SENSITIVITY,
+    build_bulk_operations,
+    chunk_to_es_doc as _chunk_to_es_doc,
+)
 from schemas import IngestionJob
 
 logger = logging.getLogger(__name__)
-
-_INDEX_BY_SENSITIVITY = {
-    0: "public_index",
-    1: "internal_index",
-    2: "confidential_index",
-    3: "restricted_index",
-}
-
-
-def _chunk_to_es_doc(chunk, job: IngestionJob, acl_tokens: list[str], acl_key: str) -> dict:
-    return {
-        "chunk_id": chunk.chunk_id,
-        "doc_id": chunk.doc_id,
-        "content": chunk.content,
-        "source_uri": job.source_uri,
-        "source_type": job.source_type,
-        "sensitivity_level": job.sensitivity_level or 0,
-        "acl_tokens": acl_tokens,
-        "acl_key": acl_key,
-        "page_number": chunk.page_number,
-        "section": chunk.section,
-        "vector": chunk.vector,
-    }
 
 
 class IndexerWorker(KafkaWorker):
@@ -53,17 +35,7 @@ class IndexerWorker(KafkaWorker):
     async def process(self, job: IngestionJob) -> IngestionJob | None:
         sensitivity = job.sensitivity_level or 0
         target_index = _INDEX_BY_SENSITIVITY.get(sensitivity, "public_index")
-
-        acl_tokens = job.acl_policy.acl_tokens if job.acl_policy else []
-        acl_key = job.acl_policy.acl_key if job.acl_policy else ""
-
-        bulk_body = []
-        for chunk in job.chunks:
-            if not chunk.chunk_id:
-                logger.warning("Skipping chunk without chunk_id in job %s", job.job_id)
-                continue
-            bulk_body.append({"index": {"_index": target_index, "_id": chunk.chunk_id}})
-            bulk_body.append(_chunk_to_es_doc(chunk, job, acl_tokens, acl_key))
+        bulk_body = build_bulk_operations(job)
 
         if not bulk_body:
             logger.warning("No chunks to index for job %s", job.job_id)

@@ -1,5 +1,28 @@
 {{- $es := .Values.services.elasticsearch }}
 {{- if $es.enabled }}
+{{- if $es.persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $es.persistence.claimName }}
+  namespace: {{ $es.namespace }}
+  labels:
+{{ include "rag.serviceLabels" (dict "root" . "component" "elasticsearch-data" "app" $es.name) | indent 4 }}
+  {{- if $es.persistence.keepOnHelmUninstall }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:
+  accessModes:
+{{ toYaml $es.persistence.accessModes | indent 4 }}
+  resources:
+    requests:
+      storage: {{ $es.persistence.size }}
+  {{- if $es.persistence.storageClassName }}
+  storageClassName: {{ $es.persistence.storageClassName }}
+  {{- end }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -19,6 +42,10 @@ spec:
         app: {{ $es.name }}
         app.kubernetes.io/component: elasticsearch
     spec:
+      {{- if $es.persistence.enabled }}
+      securityContext:
+        fsGroup: 1000
+      {{- end }}
       containers:
         - name: {{ $es.name }}
           image: {{ $es.image }}
@@ -31,6 +58,17 @@ spec:
           resources:
 {{ toYaml $es.resources | indent 12 }}
           {{- end }}
+          {{- if $es.persistence.enabled }}
+          volumeMounts:
+            - name: elasticsearch-data
+              mountPath: {{ $es.persistence.mountPath }}
+          {{- end }}
+      {{- if $es.persistence.enabled }}
+      volumes:
+        - name: elasticsearch-data
+          persistentVolumeClaim:
+            claimName: {{ $es.persistence.claimName }}
+      {{- end }}
 {{- end }}
 {{- $redis := .Values.services.redis }}
 {{- if $redis.enabled }}

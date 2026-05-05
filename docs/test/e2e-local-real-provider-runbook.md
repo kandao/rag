@@ -99,6 +99,26 @@ helm status rag-system
 
 Expected: `STATUS: deployed`.
 
+Check Elasticsearch persistence:
+
+```bash
+kubectl get pvc -n retrieval-deps elasticsearch-data
+```
+
+Expected:
+
+- The PVC exists.
+- `STATUS` is `Bound`.
+
+The local profile stores Elasticsearch data on this PVC at
+`/usr/share/elasticsearch/data`. Ingested documents should survive pod restarts and
+normal Helm upgrades. They will not survive deleting the namespace, deleting the PVC, or
+resetting the local Kubernetes storage backend.
+
+If this is the first deploy after adding persistence, existing data from the old
+non-persistent Elasticsearch pod is not copied into the PVC. Re-run local ingestion once
+after the upgrade to seed the persistent volume.
+
 ## 6. Check Runtime Config
 
 ```bash
@@ -131,6 +151,18 @@ Expected:
 
 ## 7. Port-Forward Services
 
+The services in this profile are Kubernetes `ClusterIP` services. They are reachable
+inside the cluster, but they are not automatically exposed on your laptop's
+`127.0.0.1` interface.
+
+Start the port-forward commands below before running local `curl` commands or E2E
+tests. Keep each port-forward terminal open for as long as you need local access.
+If the port-forward is not running, `curl http://127.0.0.1:8080/...` will fail with:
+
+```text
+curl: (7) Failed to connect to 127.0.0.1 port 8080
+```
+
 Gateway:
 
 ```bash
@@ -149,7 +181,12 @@ Redis, only when cache tests are needed:
 kubectl -n retrieval-deps port-forward svc/redis 6379:6379
 ```
 
-Keep these terminals open while running tests.
+Quick checks from another terminal:
+
+```bash
+curl -sS http://127.0.0.1:8080/healthz
+curl -sS http://127.0.0.1:8080/readyz
+```
 
 ## 8. Health Check
 
@@ -163,7 +200,102 @@ Expected:
 - Gateway health is ok.
 - Gateway readiness says users are loaded.
 
-## 9. Data Readiness Check
+## 9. Initialize Elasticsearch Indexes
+
+Keep the Elasticsearch port-forward from section 7 running, then create the local
+indexes and aliases:
+
+```bash
+PYTHONPATH=packages/rag-common:workers/ingestion \
+  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  -m ingestion_local init-indexes \
+  --es-url http://127.0.0.1:9200 \
+  --mapping-dir deploy/charts/rag/files/mappings
+```
+
+Expected:
+
+- The command prints alias/index statuses.
+- Re-running the command is safe; existing aliases report `alias-exists`.
+
+Verify aliases:
+
+```bash
+curl -sS http://127.0.0.1:9200/_cat/aliases?v
+```
+
+Expected aliases:
+
+- `public_index`
+- `internal_index`
+- `confidential_index`
+- `restricted_index`
+- `audit-events-current`
+
+## 10. Run Local Ingestion
+
+First run a dry-run. This parses, scans, chunks, enriches, and binds ACL metadata without
+calling OpenAI or Elasticsearch:
+
+```bash
+PYTHONPATH=packages/rag-common:workers/ingestion \
+  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  -m ingestion_local ingest \
+  --input deploy/charts/rag/files/fixtures/documents \
+  --acl-policy deploy/charts/rag/files/fixtures/acl-policies.yaml \
+  --embedding-provider openai \
+  --language auto \
+  --dry-run
+```
+
+Expected:
+
+- The command prints one result per markdown fixture.
+- `indexed` is `false`.
+- `sensitivity_level` matches the fixture ACL policy.
+- `chunk_count` is greater than zero.
+
+For the real ingestion run, the CLI reads OpenAI embedding keys from your shell
+environment. Do not paste these values into committed files or logs:
+
+```bash
+export EMBEDDING_API_KEY_L0L1=replace-with-openai-api-key
+export EMBEDDING_API_KEY_L2L3=replace-with-openai-api-key
+```
+
+Run ingestion:
+
+```bash
+PYTHONPATH=packages/rag-common:workers/ingestion \
+  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  -m ingestion_local ingest \
+  --input deploy/charts/rag/files/fixtures/documents \
+  --acl-policy deploy/charts/rag/files/fixtures/acl-policies.yaml \
+  --es-url http://127.0.0.1:9200 \
+  --embedding-provider openai \
+  --language auto \
+  --force-reindex
+```
+
+Expected:
+
+- The command calls OpenAI embeddings.
+- The command writes chunks to Elasticsearch.
+- Each result has `indexed: true`.
+
+For Chinese documents, use:
+
+```bash
+--language zh
+```
+
+For Japanese documents, especially documents with lots of kanji and little kana, use:
+
+```bash
+--language ja
+```
+
+## 11. Data Readiness Check
 
 Check aliases:
 
@@ -171,22 +303,28 @@ Check aliases:
 curl -sS http://127.0.0.1:9200/_cat/aliases?v
 ```
 
-Check expected chunks:
+Check indexed chunk count:
 
 ```bash
-curl -sS 'http://127.0.0.1:9200/*/_search?pretty' \
+curl -sS 'http://127.0.0.1:9200/public_index,internal_index,confidential_index,restricted_index/_count?pretty'
+```
+
+Inspect sample chunks:
+
+```bash
+curl -sS 'http://127.0.0.1:9200/public_index,internal_index,confidential_index,restricted_index/_search?pretty' \
   -H 'Content-Type: application/json' \
-  -d '{"query":{"ids":{"values":["eng-guide-2024-001","hr-policy-2024-001","product-overview-001","legal-contract-q1-001","m-and-a-memo-2024-001"]}}}'
+  -d '{"size":5,"query":{"match_all":{}},"_source":["chunk_id","path","sensitivity_level","acl_tokens","acl_key"]}'
 ```
 
 Expected:
 
 - Search result `hits.total.value` should be greater than zero.
-- For full quality gates, all expected chunks should exist.
+- Sample chunks should include `path`, `acl_tokens`, `acl_key`, and `sensitivity_level`.
 
 If data is missing, do not run quality gates yet. Record the run as blocked by data readiness.
 
-## 10. Manual Real-Provider Query
+## 12. Manual Real-Provider Query
 
 ```bash
 curl -sS http://127.0.0.1:8080/v1/query \
@@ -202,7 +340,7 @@ Expected:
 - If data exists, citations should be present.
 - If data is missing, answer should say insufficient data.
 
-## 11. Run Focused Tests
+## 13. Run Focused Tests
 
 Run these first:
 
@@ -245,7 +383,7 @@ PYTHONPATH=packages/rag-common:services/query-service \
   -m pytest services/query-service/tests/e2e -q
 ```
 
-## 12. What Not To Run By Default
+## 14. What Not To Run By Default
 
 Do not run reranker quality with `RERANKER_REQUIRED=true` unless you intentionally deploy reranker:
 
@@ -255,7 +393,7 @@ RERANKER_REQUIRED=true ...
 
 The current `local` profile has reranker disabled.
 
-## 13. Save Result
+## 15. Save Result
 
 ```text
 Profile: local

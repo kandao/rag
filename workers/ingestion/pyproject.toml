@@ -11,6 +11,9 @@ elasticsearch = { extras = ["async"], version = "^8.0" }
 redis = { extras = ["asyncio"], version = "^5.0" }
 httpx = "^0.27.0"
 tiktoken = "^0.7"
+jieba = "^0.42.1"
+fugashi = "^1.5.0"
+unidic-lite = "^1.0.8"
 pymupdf = "^1.24"
 pyyaml = "^6.0"
 rag-common = { path = "../../packages/rag-common", develop = true }

@@ -53,6 +53,15 @@ services:
       enabled: true
       port: 9200
       targetPort: 9200
+    persistence:
+      enabled: false
+      claimName: elasticsearch-data
+      mountPath: /usr/share/elasticsearch/data
+      size: 5Gi
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: ""
+      keepOnHelmUninstall: true
 
   redis:
     enabled: false

@@ -39,6 +39,7 @@ Layer 3 — Completion (depends on retrieval outputs)
 Reference (no dependencies, read any time)
   15-architecture-overview.md      Full component map, query flow, ingestion flow, security boundaries
   16-project-structure.md          File inventory, message queue decision, repo layout
+  17-current-local-architecture.md Current implemented local architecture and delta from the overview
 ```
 ​
 ---
@@ -64,6 +65,7 @@ Reference (no dependencies, read any time)
 | 14 | `14-local-dev-environment.md` | Local dev setup, mock services | All (DX) |
 | 15 | `15-architecture-overview.md` | Full architecture, request flow, data layout | All |
 | 16 | `16-project-structure.md` | File inventory, message queue, repo layout | All |
+| 17 | `17-current-local-architecture.md` | Current local architecture, deployed profile, gap analysis | All |
 ​
 ---
 ​
