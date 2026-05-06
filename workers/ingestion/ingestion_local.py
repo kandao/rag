@@ -44,6 +44,16 @@ def _build_parser() -> argparse.ArgumentParser:
     ingest.add_argument("--limit", type=int)
     ingest.add_argument("--force-reindex", action="store_true")
     ingest.add_argument(
+        "--force-sensitivity",
+        type=int,
+        choices=[0, 1, 2, 3],
+        help="Override final sensitivity level after risk scan and ACL policy selection",
+    )
+    ingest.add_argument(
+        "--override-allowed-groups",
+        help="Comma-separated ACL groups to apply to every ingested document",
+    )
+    ingest.add_argument(
         "--language",
         default="auto",
         choices=["auto", "zh", "ja"],
@@ -128,6 +138,12 @@ async def _run(args: argparse.Namespace) -> int:
             limit=args.limit,
             force_reindex=args.force_reindex,
             language=args.language,
+            force_sensitivity=args.force_sensitivity,
+            override_allowed_groups=(
+                [g.strip() for g in args.override_allowed_groups.split(",") if g.strip()]
+                if args.override_allowed_groups
+                else None
+            ),
         )
         print(json.dumps([r.__dict__ for r in results], indent=2, sort_keys=True))
         if any(r.quarantined for r in results):

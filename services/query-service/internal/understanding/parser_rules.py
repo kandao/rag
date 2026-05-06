@@ -48,15 +48,18 @@ def extract_keywords(query: str) -> list[str]:
 
 
 def match_topic(query: str) -> str | None:
-    _load_vocab()
-    q = query.lower()
-    for topic, keywords in _TOPIC_VOCAB.items():
-        if topic == "default":
-            continue
-        for kw in keywords:
-            if kw.lower() in q:
-                return topic
+    # TEMPORARILY DISABLED: substring matching causes false positives (e.g. "api" in
+    # "capital") which propagate into hard ES filters and return zero results.
+    # Fix needed: switch to word-boundary regex matching + soft boost instead of hard filter.
     return None
+    # _load_vocab()
+    # q = query.lower()
+    # for topic, keywords in _TOPIC_VOCAB.items():
+    #     if topic == "default":
+    #         continue
+    #     for kw in keywords:
+    #         if kw.lower() in q:
+    #             return topic
 
 
 def match_doc_type(query: str) -> str | None:

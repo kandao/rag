@@ -52,11 +52,12 @@ def route(context: QueryContext, user_context: UserContext) -> RoutingDecision:
     if context.topic:
         affinity = _TOPIC_AFFINITY.get(context.topic)
         if affinity:
-            candidates = [affinity]
             if affinity in accessible:
-                reason = f"topic={context.topic} → affinity index {affinity}"
+                candidates = [affinity] + [idx for idx in accessible if idx != affinity]
+                reason = f"topic={context.topic} → affinity index {affinity}; searching remaining accessible indexes"
             else:
-                reason = f"topic={context.topic} → affinity index {affinity} [ACL filters may deny]"
+                candidates = list(accessible)
+                reason = f"topic={context.topic} → affinity index {affinity} not accessible; searching accessible indexes"
         else:
             candidates = list(accessible)
             reason = f"topic={context.topic} has no affinity; searching all accessible"

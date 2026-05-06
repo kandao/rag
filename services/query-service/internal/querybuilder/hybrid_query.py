@@ -10,6 +10,13 @@ BM25_BOOST = float(os.environ.get("HYBRID_QUERY_BM25_BOOST", "0.3"))
 KNN_K = int(os.environ.get("HYBRID_QUERY_K", "100"))
 KNN_NUM_CANDIDATES = int(os.environ.get("HYBRID_QUERY_NUM_CANDIDATES", "200"))
 QUERY_RESULT_SIZE = int(os.environ.get("QUERY_RESULT_SIZE", "100"))
+BM25_SEARCH_FIELDS = [
+    "content^3",
+    "ticker^8",
+    "company^5",
+    "section^2",
+    "path",
+]
 
 
 def _metadata_filters(query_ctx: QueryContext) -> list[dict]:
@@ -38,7 +45,7 @@ def build_hybrid_query(
                     {
                         "multi_match": {
                             "query": query_ctx.raw_query,
-                            "fields": ["content"],
+                            "fields": BM25_SEARCH_FIELDS,
                             "boost": BM25_BOOST,
                         }
                     }

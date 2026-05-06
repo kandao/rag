@@ -37,6 +37,36 @@ def test_parse_markdown_no_headers():
     assert sections[0].content == content
 
 
+def test_parse_sec_markdown_bold_item_headings():
+    from workers.parser_worker import parse_markdown
+
+    content = """---
+ticker: RKLB
+company: "Rocket Lab Corporation"
+form: 10-K
+---
+
+**PART I**
+
+**Item 1. Business**
+
+Rocket Lab builds launch vehicles and spacecraft.
+
+**Item 7. Management’s Discussion and Analysis of Financial Condition and Results of Operations**
+
+Revenue increased due to launch services and space systems.
+"""
+
+    sections = parse_markdown(content)
+
+    assert [s.section for s in sections] == [
+        "Item 1. Business",
+        "Item 7. Management’s Discussion and Analysis of Financial Condition and Results of Operations",
+    ]
+    assert "Rocket Lab builds" in sections[0].content
+    assert "Revenue increased" in sections[1].content
+
+
 def test_parse_html():
     from workers.parser_worker import parse_html
     html = "<html><body><h1>Title</h1><p>Content here.</p></body></html>"

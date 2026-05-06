@@ -28,7 +28,7 @@ def _qctx(topic=None) -> QueryContext:
 
 def test_qu_07_l1_finance_routes_internal():
     decision = route(_qctx("finance"), _ctx(1))
-    assert decision.target_indexes == ["internal_index"]
+    assert decision.target_indexes == ["internal_index", "public_index"]
     assert decision.allow_knn is True
 
 
@@ -53,8 +53,8 @@ def test_l1_no_topic_both_l0l1_knn_true():
     assert "confidential_index" not in decision.target_indexes
 
 
-def test_inaccessible_topic_affinity_routes_to_affinity_for_acl_filtering():
+def test_inaccessible_topic_affinity_routes_to_accessible_indexes():
     decision = route(_qctx("legal"), _ctx(0))
-    assert decision.target_indexes == ["confidential_index"]
+    assert decision.target_indexes == ["public_index"]
     assert decision.allow_knn is True
-    assert "ACL filters may deny" in decision.routing_reason
+    assert "not accessible" in decision.routing_reason

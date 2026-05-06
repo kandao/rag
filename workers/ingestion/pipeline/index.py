@@ -22,13 +22,40 @@ LOCAL_INDEXES = {
 }
 
 
+_SEC_METADATA_FIELDS = [
+    "ticker",
+    "company",
+    "cik",
+    "form",
+    "report_date",
+    "filing_date",
+    "accession_number",
+    "source_url",
+]
+
+
+def _content_with_search_context(chunk, metadata: dict) -> str:
+    header_parts = []
+    for key in ["ticker", "company", "form", "report_date"]:
+        value = metadata.get(key)
+        if value:
+            label = key.replace("_", " ").title()
+            header_parts.append(f"{label}: {value}")
+    if chunk.section:
+        header_parts.append(f"Section: {chunk.section}")
+
+    if not header_parts:
+        return chunk.content
+    return "\n".join(header_parts) + "\n\n" + chunk.content
+
+
 def chunk_to_es_doc(chunk, job: IngestionJob, acl_tokens: list[str], acl_key: str) -> dict:
     metadata = job.source_metadata or {}
     path = metadata.get("path") or metadata.get("source_relative_path") or job.source_uri
-    return {
+    doc = {
         "chunk_id": chunk.chunk_id,
         "doc_id": chunk.doc_id,
-        "content": chunk.content,
+        "content": _content_with_search_context(chunk, metadata),
         "path": path,
         "source_uri": job.source_uri,
         "source_type": job.source_type,
@@ -47,6 +74,11 @@ def chunk_to_es_doc(chunk, job: IngestionJob, acl_tokens: list[str], acl_key: st
         "created_at": job.created_at,
         "updated_at": job.updated_at,
     }
+    for field in _SEC_METADATA_FIELDS:
+        value = metadata.get(field)
+        if value not in (None, ""):
+            doc[field] = value
+    return doc
 
 
 def build_bulk_operations(job: IngestionJob, *, force_reindex: bool = False) -> list[dict]:

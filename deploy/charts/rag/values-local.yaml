@@ -79,7 +79,7 @@ services:
       MODEL_MAX_TOKENS_L3: "1024"
       EMBEDDING_PROVIDER_L0L1: openai
       EMBEDDING_API_URL_L0L1: https://api.openai.com/v1/embeddings
-      EMBEDDING_MODEL_L0L1: text-embedding-3-small
+      EMBEDDING_MODEL_L0L1: text-embedding-3-large
       EMBEDDING_DIMS_L0L1: "1536"
       EMBEDDING_API_KEY_ENV_L0L1: EMBEDDING_API_KEY_L0L1
       EMBEDDING_PROVIDER_L2L3: openai
@@ -133,7 +133,7 @@ services:
       REDIS_HOST: redis.retrieval-deps
       REDIS_PORT: "6379"
       EMBEDDING_PROVIDER_L0L1: openai
-      EMBEDDING_MODEL_L0L1: text-embedding-3-small
+      EMBEDDING_MODEL_L0L1: text-embedding-3-large
       EMBEDDING_DIMS_L0L1: "1536"
       EMBEDDING_API_URL_L0L1: https://api.openai.com/v1/embeddings
       EMBEDDING_API_KEY_ENV_L0L1: EMBEDDING_API_KEY_L0L1

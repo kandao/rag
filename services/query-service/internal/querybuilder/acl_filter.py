@@ -3,6 +3,7 @@ from rag_common.models.user_context import UserContext
 SOURCE_FIELDS = [
     "doc_id", "chunk_id", "content", "path",
     "page_number", "section", "topic", "doc_type",
+    "ticker", "company", "form", "report_date", "filing_date",
     "acl_key", "sensitivity_level",
 ]
 

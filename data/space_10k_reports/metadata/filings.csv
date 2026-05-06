@@ -1,0 +1,11 @@
+ticker,company,cik,form,report_date,filing_date,accession_number,primary_doc,source_url
+ASTS,"AST SpaceMobile, Inc.",1780312,10-K,2025-12-31,2026-03-02,0001780312-26-000006,asts-20251231.htm,https://www.sec.gov/Archives/edgar/data/1780312/000178031226000006/asts-20251231.htm
+RKLB,Rocket Lab Corp,1819994,10-K,2025-12-31,2026-02-26,0001819994-26-000013,rklb-20251231.htm,https://www.sec.gov/Archives/edgar/data/1819994/000181999426000013/rklb-20251231.htm
+LUNR,"Intuitive Machines, Inc.",1844452,10-K,2025-12-31,2026-03-19,0001628280-26-019865,lunr-20251231.htm,https://www.sec.gov/Archives/edgar/data/1844452/000162828026019865/lunr-20251231.htm
+RDW,Redwire Corp,1819810,10-K,2025-12-31,2026-02-27,0001819810-26-000029,rdw-20251231.htm,https://www.sec.gov/Archives/edgar/data/1819810/000181981026000029/rdw-20251231.htm
+PL,Planet Labs PBC,1836833,10-K,2026-01-31,2026-03-23,0001193125-26-119957,pl-20260131.htm,https://www.sec.gov/Archives/edgar/data/1836833/000119312526119957/pl-20260131.htm
+BKSY,BlackSky Technology Inc.,1753539,10-K,2025-12-31,2026-03-17,0001753539-26-000032,bksy-20251231.htm,https://www.sec.gov/Archives/edgar/data/1753539/000175353926000032/bksy-20251231.htm
+SPCE,"Virgin Galactic Holdings, Inc",1706946,10-K,2025-12-31,2026-03-30,0001706946-26-000019,spce-20251231.htm,https://www.sec.gov/Archives/edgar/data/1706946/000170694626000019/spce-20251231.htm
+IRDM,Iridium Communications Inc.,1418819,10-K,2025-12-31,2026-02-12,0001418819-26-000009,irdm-20251231.htm,https://www.sec.gov/Archives/edgar/data/1418819/000141881926000009/irdm-20251231.htm
+VSAT,VIASAT INC,797721,10-K,2025-03-31,2025-05-27,0000950170-25-077138,vsat-20250331.htm,https://www.sec.gov/Archives/edgar/data/797721/000095017025077138/vsat-20250331.htm
+GSAT,"Globalstar, Inc.",1366868,10-K,2025-12-31,2026-02-27,0001366868-26-000012,gsat-20251231.htm,https://www.sec.gov/Archives/edgar/data/1366868/000136686826000012/gsat-20251231.htm

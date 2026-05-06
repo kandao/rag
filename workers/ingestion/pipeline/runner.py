@@ -13,7 +13,7 @@ from .chunk import chunk_job
 from .embed import embed_job
 from .enrich import enrich_job
 from .index import build_bulk_operations, index_job
-from .parse import parse_job
+from .parse import extract_markdown_frontmatter, parse_job
 from .risk_scan import scan_job
 
 
@@ -83,6 +83,9 @@ def make_local_job(path: Path, *, root: Path, language: str = "auto") -> Ingesti
     else:
         raw_content = path.read_text(encoding="utf-8")
         raw_content_bytes = None
+        if source_type == "markdown":
+            frontmatter, _ = extract_markdown_frontmatter(raw_content)
+            metadata.update(frontmatter)
     return IngestionJob(
         job_id=str(uuid.uuid4()),
         source_type=source_type,
@@ -125,6 +128,8 @@ async def run_local_ingestion(
     limit: int | None = None,
     force_reindex: bool = False,
     language: str = "auto",
+    force_sensitivity: int | None = None,
+    override_allowed_groups: list[str] | None = None,
 ) -> list[LocalIngestionResult]:
     input_root = Path(input_path)
     root = input_root if input_root.is_dir() else input_root.parent
@@ -167,6 +172,16 @@ async def run_local_ingestion(
                 acl_policies=acl_policies,
                 default_clearance=default_clearance,
             )
+            if force_sensitivity is not None:
+                job = job.model_copy(update={"sensitivity_level": force_sensitivity})
+            if override_allowed_groups is not None and job.acl_policy is not None:
+                job = job.model_copy(
+                    update={
+                        "acl_policy": job.acl_policy.model_copy(
+                            update={"allowed_groups": override_allowed_groups}
+                        )
+                    }
+                )
             job = bind_acl_job(job)
 
             if dry_run:

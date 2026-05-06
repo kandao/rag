@@ -4,7 +4,7 @@ from rag_common.models.query import QueryContext
 from rag_common.models.user_context import UserContext
 
 from .acl_filter import SOURCE_FIELDS, build_acl_filters
-from .hybrid_query import _metadata_filters
+from .hybrid_query import BM25_SEARCH_FIELDS, _metadata_filters
 
 QUERY_RESULT_SIZE = int(os.environ.get("QUERY_RESULT_SIZE", "100"))
 
@@ -21,7 +21,7 @@ def build_bm25_only_query(user_context: UserContext, query_ctx: QueryContext) ->
                     {
                         "multi_match": {
                             "query": query_ctx.raw_query,
-                            "fields": ["content"],
+                            "fields": BM25_SEARCH_FIELDS,
                         }
                     }
                 ],
