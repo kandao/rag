@@ -26,7 +26,7 @@ Start with cache and security:
 GATEWAY_URL=http://127.0.0.1:8080 \
 REDIS_URL=redis://127.0.0.1:6379 \
 PYTHONPATH=packages/rag-common:services/query-service \
-  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  ${PYTHON:-python} \
   -m pytest services/query-service/tests/e2e/test_cache.py \
              services/query-service/tests/e2e/test_security_gaps.py -q
 ```
@@ -51,7 +51,7 @@ Run this only if Elasticsearch data readiness passed:
 GATEWAY_URL=http://127.0.0.1:8080 \
 REDIS_URL=redis://127.0.0.1:6379 \
 PYTHONPATH=packages/rag-common:services/query-service \
-  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  ${PYTHON:-python} \
   -m pytest services/query-service/tests/e2e/test_acl_boundary.py \
              services/query-service/tests/e2e/test_retrieval_quality.py \
              services/query-service/tests/e2e/test_answer_quality.py -q
@@ -67,7 +67,7 @@ Run full E2E only after focused failures are understood:
 GATEWAY_URL=http://127.0.0.1:8080 \
 REDIS_URL=redis://127.0.0.1:6379 \
 PYTHONPATH=packages/rag-common:services/query-service \
-  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  ${PYTHON:-python} \
   -m pytest services/query-service/tests/e2e -q
 ```
 
@@ -82,7 +82,7 @@ RERANKER_REQUIRED=true \
 GATEWAY_URL=http://127.0.0.1:8080 \
 RERANKER_URL=http://127.0.0.1:8002 \
 PYTHONPATH=packages/rag-common:services/query-service \
-  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  ${PYTHON:-python} \
   -m pytest services/query-service/tests/e2e/test_reranker_quality.py -q
 ```
 

@@ -9,7 +9,7 @@ This file tracks the current test-work status after the E2E/unit test implementa
 - [x] Query-service unit test files exist for ACL, guard, query builder, retrieval, model gateway, audit, reranker client, and cache coverage.
 - [x] Reranker, gateway-stub, embedding-service, and ingestion worker unit test files exist.
 - [x] The planned missing-unit-test IDs are mostly represented in source tests.
-- [x] Unit tests pass using `/Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python`.
+- [x] Unit tests pass using a Python interpreter with the project dependencies installed.
 - [x] Security tests pass.
 - [x] Query-service and ingestion integration tests pass.
 - [x] E2E tests pass against the running seeded local stack, with reranker quality gates skipped because the local reranker model is not mounted.
@@ -38,30 +38,27 @@ This file tracks the current test-work status after the E2E/unit test implementa
 
 ## Verification Commands
 
-Use these from the repository root. The verified local interpreter was:
+Use these from the repository root. The commands use `${PYTHON:-python}`; set
+`PYTHON` to a virtualenv interpreter path when needed.
 
 ```bash
-/Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python
-```
-
-```bash
-PYTHONPATH=packages/rag-common:services/query-service /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python -m pytest services/query-service/tests/unit -q
-PYTHONPATH=services/reranker-service /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python -m pytest services/reranker-service/tests/unit -q
-PYTHONPATH=packages/rag-common:services/gateway-stub /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python -m pytest services/gateway-stub/tests/unit -q
-PYTHONPATH=packages/rag-common:services/embedding-service /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python -m pytest services/embedding-service/tests/unit -q
-PYTHONPATH=packages/rag-common:workers/ingestion /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python -m pytest workers/ingestion/tests/unit -q
+PYTHONPATH=packages/rag-common:services/query-service ${PYTHON:-python} -m pytest services/query-service/tests/unit -q
+PYTHONPATH=services/reranker-service ${PYTHON:-python} -m pytest services/reranker-service/tests/unit -q
+PYTHONPATH=packages/rag-common:services/gateway-stub ${PYTHON:-python} -m pytest services/gateway-stub/tests/unit -q
+PYTHONPATH=packages/rag-common:services/embedding-service ${PYTHON:-python} -m pytest services/embedding-service/tests/unit -q
+PYTHONPATH=packages/rag-common:workers/ingestion ${PYTHON:-python} -m pytest workers/ingestion/tests/unit -q
 ```
 
 E2E, only with the full seeded stack running:
 
 ```bash
-PYTHONPATH=packages/rag-common:services/query-service /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python -m pytest services/query-service/tests/e2e -q
+PYTHONPATH=packages/rag-common:services/query-service ${PYTHON:-python} -m pytest services/query-service/tests/e2e -q
 ```
 
 Strict reranker E2E after a valid model is mounted:
 
 ```bash
-RERANKER_REQUIRED=true PYTHONPATH=packages/rag-common:services/query-service /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python -m pytest services/query-service/tests/e2e/test_reranker_quality.py -q
+RERANKER_REQUIRED=true PYTHONPATH=packages/rag-common:services/query-service ${PYTHON:-python} -m pytest services/query-service/tests/e2e/test_reranker_quality.py -q
 ```
 
 ## Latest Verification Results

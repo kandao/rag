@@ -125,7 +125,7 @@ This repository has two local Helm profiles:
 - A local Kubernetes cluster, such as OrbStack, with the current `kubectl` context pointing at that cluster.
 - Docker available to the same local cluster image store.
 - Helm 3.
-- Project Python at `/Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python` for the documented test commands.
+- Python 3.11+ with the project dependencies installed. The documented commands use `${PYTHON:-python}`; set `PYTHON` to a virtualenv interpreter path when needed.
 
 ## Build Local Images
 
@@ -172,7 +172,7 @@ Run the deterministic E2E suite:
 
 ```bash
 PYTHONPATH=packages/rag-common:services/query-service \
-  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  ${PYTHON:-python} \
   -m pytest services/query-service/tests/e2e -q
 ```
 

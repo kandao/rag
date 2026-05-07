@@ -19,7 +19,7 @@ kubectl -n api-gateway port-forward svc/gateway-stub 8080:8080
 Then run:
 
 ```bash
-/Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+${PYTHON:-python} \
   tools/eval_rag.py \
   --dataset evals/sec_10k_rag_eval.jsonl \
   --gateway-url http://127.0.0.1:8080
@@ -28,7 +28,7 @@ Then run:
 Optional JSON output:
 
 ```bash
-/Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+${PYTHON:-python} \
   tools/eval_rag.py \
   --json-output /private/tmp/sec_10k_rag_eval_results.json
 ```

@@ -17,7 +17,7 @@ It must stay ignored by git.
 ## 2. Check Repo And Cluster
 
 ```bash
-cd /Users/chengtaowu/Desktop/AiWorkSpace/rag
+cd /path/to/rag
 kubectl config current-context
 kubectl get nodes
 ```
@@ -207,7 +207,7 @@ indexes and aliases:
 
 ```bash
 PYTHONPATH=packages/rag-common:workers/ingestion \
-  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  ${PYTHON:-python} \
   -m ingestion_local init-indexes \
   --es-url http://127.0.0.1:9200 \
   --mapping-dir deploy/charts/rag/files/mappings
@@ -239,7 +239,7 @@ calling OpenAI or Elasticsearch:
 
 ```bash
 PYTHONPATH=packages/rag-common:workers/ingestion \
-  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  ${PYTHON:-python} \
   -m ingestion_local ingest \
   --input deploy/charts/rag/files/fixtures/documents \
   --acl-policy deploy/charts/rag/files/fixtures/acl-policies.yaml \
@@ -267,7 +267,7 @@ Run ingestion:
 
 ```bash
 PYTHONPATH=packages/rag-common:workers/ingestion \
-  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  ${PYTHON:-python} \
   -m ingestion_local ingest \
   --input deploy/charts/rag/files/fixtures/documents \
   --acl-policy deploy/charts/rag/files/fixtures/acl-policies.yaml \
@@ -348,7 +348,7 @@ Run these first:
 GATEWAY_URL=http://127.0.0.1:8080 \
 REDIS_URL=redis://127.0.0.1:6379 \
 PYTHONPATH=packages/rag-common:services/query-service \
-  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  ${PYTHON:-python} \
   -m pytest services/query-service/tests/e2e/test_cache.py \
              services/query-service/tests/e2e/test_security_gaps.py -q
 ```
@@ -359,7 +359,7 @@ Run retrieval quality only after data readiness passes:
 GATEWAY_URL=http://127.0.0.1:8080 \
 REDIS_URL=redis://127.0.0.1:6379 \
 PYTHONPATH=packages/rag-common:services/query-service \
-  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  ${PYTHON:-python} \
   -m pytest services/query-service/tests/e2e/test_retrieval_quality.py -q
 ```
 
@@ -369,7 +369,7 @@ Run answer quality only after data readiness passes:
 GATEWAY_URL=http://127.0.0.1:8080 \
 REDIS_URL=redis://127.0.0.1:6379 \
 PYTHONPATH=packages/rag-common:services/query-service \
-  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  ${PYTHON:-python} \
   -m pytest services/query-service/tests/e2e/test_answer_quality.py -q
 ```
 
@@ -379,7 +379,7 @@ Run full E2E only after the focused tests are understood:
 GATEWAY_URL=http://127.0.0.1:8080 \
 REDIS_URL=redis://127.0.0.1:6379 \
 PYTHONPATH=packages/rag-common:services/query-service \
-  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  ${PYTHON:-python} \
   -m pytest services/query-service/tests/e2e -q
 ```
 

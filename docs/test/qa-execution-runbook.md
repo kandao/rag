@@ -7,7 +7,7 @@ This guide tells you exactly what to run and what to look for.
 Go to the repo:
 
 ```bash
-cd /Users/chengtaowu/Desktop/AiWorkSpace/rag
+cd /path/to/rag
 ```
 
 ## 2. Record Git State

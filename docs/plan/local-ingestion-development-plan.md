@@ -91,7 +91,7 @@ Proposed command:
 
 ```bash
 PYTHONPATH=packages/rag-common:workers/ingestion \
-  /Users/chengtaowu/Desktop/AiWorkSpace/learn-claude-code/bin/python \
+  ${PYTHON:-python} \
   -m ingestion_local ingest \
   --input deploy/charts/rag/files/fixtures/documents \
   --acl-policy deploy/charts/rag/files/fixtures/acl-policies.yaml \
